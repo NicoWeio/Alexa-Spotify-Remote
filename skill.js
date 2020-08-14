@@ -15,6 +15,16 @@ const NextSongIntentHandler = {
   }
 };
 
+const PlayIntentHandler = {
+  canHandle: Helpers.canHandleIntent('PlayIntent'),
+  async handle(handlerInput) {
+    await Spotify(handlerInput).play();
+    return handlerInput.responseBuilder
+      .speak('Okay, ich starte die Wiedergabe.')
+      .getResponse();
+  }
+};
+
 const PauseIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.PauseIntent'),
   async handle(handlerInput) {
@@ -224,6 +234,7 @@ exports.skillBuilder = Alexa.SkillBuilders.custom()
   .addRequestHandlers(
     NextSongIntentHandler,
     PauseIntentHandler,
+    PlayIntentHandler,
     PlayOnDeviceIntentHandler,
     PreviousSongIntentHandler,
     SeekIntentHandler,
