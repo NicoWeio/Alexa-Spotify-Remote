@@ -5,15 +5,25 @@ const languageStrings = require('./languageStrings');
 const Spotify = require('./spotify').SpotifyClass;
 const Helpers = require('./helpers');
 
-const NextSongIntentHandler = {
-  canHandle: Helpers.canHandleIntent('AMAZON.NextIntent'),
+// --- getters ---
+
+const GetCurrentlyPlayingIntentHandler = {
+  canHandle: Helpers.canHandleIntent('GetCurrentlyPlayingIntent'),
   async handle(handlerInput) {
-    await Spotify(handlerInput).nextSong();
-    return handlerInput.responseBuilder
-      .speak('Okay, nächster Song.')
-      .getResponse();
+    let state = (await Spotify(handlerInput).getMyCurrentPlaybackState()).body;
+    //TODO handle not playing
+    if (state.item)
+      return handlerInput.responseBuilder
+        .speak(`Es spielt gerade „${Helpers.escapeContent(state.item.name)}“ von „${Helpers.escapeContent(state.item.artists.map(a => a.name).join(','))}“ auf „${Helpers.escapeContent(state.device.name)}“.`)
+        .getResponse();
+    else
+      return handlerInput.responseBuilder
+        .speak('Gerade wird nichts wiedergegeben.')
+        .getResponse();
   }
 };
+
+// --- play/pause ---
 
 const PlayIntentHandler = {
   canHandle: Helpers.canHandleIntent('PlayIntent'),
@@ -25,20 +35,10 @@ const PlayIntentHandler = {
   }
 };
 
-const PauseIntentHandler = {
-  canHandle: Helpers.canHandleIntent('AMAZON.PauseIntent'),
-  async handle(handlerInput) {
-    await Spotify(handlerInput).pause();
-    return handlerInput.responseBuilder
-      .speak('Okay, pausiere.')
-      .getResponse();
-  }
-};
-
-const Fuse = require('fuse.js');
 const PlayOnDeviceIntentHandler = {
   canHandle: Helpers.canHandleIntent('PlayOnDeviceIntent'),
   async handle(handlerInput) {
+    const Fuse = require('fuse.js');
     let deviceQuery = handlerInput.requestEnvelope.request.intent.slots.Device.value;
     let s = Spotify(handlerInput);
     const devices = (await s.getMyDevices()).body.devices;
@@ -67,6 +67,28 @@ const PlayOnDeviceIntentHandler = {
   }
 };
 
+const PauseIntentHandler = {
+  canHandle: Helpers.canHandleIntent('AMAZON.PauseIntent'),
+  async handle(handlerInput) {
+    await Spotify(handlerInput).pause();
+    return handlerInput.responseBuilder
+      .speak('Okay, pausiere.')
+      .getResponse();
+  }
+};
+
+// --- skip ---
+
+const NextSongIntentHandler = {
+  canHandle: Helpers.canHandleIntent('AMAZON.NextIntent'),
+  async handle(handlerInput) {
+    await Spotify(handlerInput).nextSong();
+    return handlerInput.responseBuilder
+      .speak('Okay, nächster Song.')
+      .getResponse();
+  }
+};
+
 const PreviousSongIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.PreviousIntent'),
   async handle(handlerInput) {
@@ -77,16 +99,16 @@ const PreviousSongIntentHandler = {
   }
 };
 
-const SeekIntentHandler = {
-  canHandle: Helpers.canHandleIntent('SeekIntent'),
+// --- setters/toggles ---
+
+const SetVolumeIntentHandler = {
+  canHandle: Helpers.canHandleIntent('SetVolumeIntent'),
   async handle(handlerInput) {
-    const IsoDuration = require('iso8601-duration');
-    let newIndex = handlerInput.requestEnvelope.request.intent.slots.Time.value;
-    let millis = IsoDuration.toSeconds(IsoDuration.parse(newIndex)) * 1000;
-    await Spotify(handlerInput).seek(millis);
+    let volume = handlerInput.requestEnvelope.request.intent.slots.Volume.value;
+    await Spotify(handlerInput).setVolume(volume);
     return handlerInput.responseBuilder
-      .speak('Okay.')
-      .getResponse();
+    .speak(`Okay, setze Lautstärke auf ${volume}%.`)
+    .getResponse();
   }
 };
 
@@ -102,6 +124,23 @@ const ToggleShuffleIntentHandler = {
       .getResponse();
   }
 };
+
+// --- misc. ---
+
+const SeekIntentHandler = {
+  canHandle: Helpers.canHandleIntent('SeekIntent'),
+  async handle(handlerInput) {
+    const IsoDuration = require('iso8601-duration');
+    let newIndex = handlerInput.requestEnvelope.request.intent.slots.Time.value;
+    let millis = IsoDuration.toSeconds(IsoDuration.parse(newIndex)) * 1000;
+    await Spotify(handlerInput).seek(millis);
+    return handlerInput.responseBuilder
+      .speak('Okay.')
+      .getResponse();
+  }
+};
+
+// --- general handlers ---
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -180,6 +219,8 @@ const IntentReflectorHandler = {
   }
 };
 
+// --- error handlers ----
+
 const NotAuthenticatedErrorHandler = {
   canHandle(handlerInput, error) {
     return error && error.isAxiosError && error.response.status === 403;
@@ -218,6 +259,8 @@ const ErrorHandler = {
   }
 };
 
+// --- interceptors ---
+
 // This request interceptor will bind a translation function 't' to the handlerInput
 const LocalisationRequestInterceptor = {
   process(handlerInput) {
@@ -230,16 +273,25 @@ const LocalisationRequestInterceptor = {
   }
 };
 
+// ---------
+
 exports.skillBuilder = Alexa.SkillBuilders.custom()
   .addRequestHandlers(
-    NextSongIntentHandler,
-    PauseIntentHandler,
+    // --- getters ---
+    GetCurrentlyPlayingIntentHandler,
+    // --- play/pause ---
     PlayIntentHandler,
     PlayOnDeviceIntentHandler,
+    PauseIntentHandler,
+    // --- skip ---
+    NextSongIntentHandler,
     PreviousSongIntentHandler,
-    SeekIntentHandler,
+    // --- setters/toggles ---
+    SetVolumeIntentHandler,
     ToggleShuffleIntentHandler,
-
+    // --- misc. ---
+    SeekIntentHandler,
+    // --- general handlers ---
     LaunchRequestHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
@@ -247,8 +299,8 @@ exports.skillBuilder = Alexa.SkillBuilders.custom()
     SessionEndedRequestHandler,
     IntentReflectorHandler)
   .addErrorHandlers(
-    NoTokenErrorHandler,
     NotAuthenticatedErrorHandler,
+    NoTokenErrorHandler,
     ErrorHandler)
   .addRequestInterceptors(LocalisationRequestInterceptor)
   .withApiClient(new Alexa.DefaultApiClient())
