@@ -1,11 +1,13 @@
 const nock = require('nock');
 const rh = require('./lambda.js').handler;
 
-const myNock = nock('https://api.spotify.com', {
-  reqheaders: {
-    "Authorization": "Bearer PLACEHOLDER" //TODO
-  }
-});
+function myNock() {
+  return nock('https://api.spotify.com', {
+    reqheaders: {
+      "Authorization": "Bearer PLACEHOLDER" //TODO
+    }
+  });
+}
 
 function generateRequest(intentName, o = {}) {
   return {
@@ -88,8 +90,7 @@ function convertResponse(r) {
 
 describe('GetCurrentlyPlayingIntent', () => {
   it("fetches and announces current song, artists and device", async () => {
-    //TODO token iwo mal checken…
-    nock('https://api.spotify.com')
+    const mock = myNock()
       .get(`/v1/me/player`)
       .reply(200, {
         item: {
@@ -106,15 +107,15 @@ describe('GetCurrentlyPlayingIntent', () => {
       });
     const response = await doRequest('GetCurrentlyPlayingIntent');
     expect(response.speak).toBe("Es spielt gerade „SONG1“ von „ARTIST1, ARTIST2“ auf „DEVICE1“.");
-    expect(nock.isDone()).toBe(true);
+    expect(mock.isDone()).toBe(true);
   });
   it("gives an error message when nothing plays", async () => {
-    nock('https://api.spotify.com')
+    const mock = myNock()
       .get(`/v1/me/player`)
       .reply(200, {});
     const response = await doRequest('GetCurrentlyPlayingIntent');
     expect(response.speak).toBe("Gerade wird nichts wiedergegeben.");
-    expect(nock.isDone()).toBe(true);
+    expect(mock.isDone()).toBe(true);
   });
 });
 
@@ -146,7 +147,7 @@ describe('PlayOnDeviceIntent', () => {
     ]
     for (let v of variants) {
       it(`${v.name}: ${v.queryName} → ${v.deviceName}`, async () => {
-        nock('https://api.spotify.com')
+        const mock = myNock()
           .get(`/v1/me/player/devices`)
           .reply(200, {
             devices: v.deviceNames.map(name => {
@@ -164,12 +165,12 @@ describe('PlayOnDeviceIntent', () => {
           }
         });
         expect(response.speak).toBe(`Okay, spiele auf ${v.deviceName}`);
-        expect(nock.isDone()).toBe(true);
+        expect(mock.isDone()).toBe(true);
       });
     }
 
     it("gives an error message when no matching device is found", async () => {
-      nock('https://api.spotify.com')
+      const mock = myNock()
         .get(`/v1/me/player/devices`)
         .reply(200, {
           devices: [{
@@ -183,11 +184,11 @@ describe('PlayOnDeviceIntent', () => {
         }
       });
       expect(response.speak).toBe("Ich habe kein passendes Gerät gefunden. Versuche es bitte noch einmal.");
-      expect(nock.isDone()).toBe(true);
+      expect(mock.isDone()).toBe(true);
     });
 
     it("gives an error message when no device is found at all", async () => {
-      nock('https://api.spotify.com')
+      const mock = myNock()
         .get(`/v1/me/player/devices`)
         .reply(200, {
           devices: []
@@ -198,7 +199,7 @@ describe('PlayOnDeviceIntent', () => {
         }
       });
       expect(response.speak).toBe("Ich sehe keine aktiven Geräte in deinem Spotify-Account.");
-      expect(nock.isDone()).toBe(true);
+      expect(mock.isDone()).toBe(true);
     });
 
   });
@@ -222,8 +223,8 @@ describe('SeekIntent', () => {
   };
   for (let isoTime in times) {
     let msTime = times[isoTime];
-    it(`calls API and returns success message: ${isoTime}/${msTime}`, async () => {
-      nock('https://api.spotify.com')
+    it(`calls API correctly and returns success message: ${isoTime}/${msTime}`, async () => {
+      const mock = myNock()
         .put('/v1/me/player/seek')
         .query({
           position_ms: msTime
@@ -235,7 +236,7 @@ describe('SeekIntent', () => {
         }
       });
       expect(response.speak).toBe("Okay.");
-      expect(nock.isDone()).toBe(true);
+      expect(mock.isDone()).toBe(true);
     });
   }
 });
@@ -312,13 +313,13 @@ let apiTests = [{
 
 for (let t of apiTests) {
   describe(t.intentName, () => {
-    it('calls API and returns success message', async () => {
-      nock('https://api.spotify.com')[t.verb](t.endpoint).reply(204);
+    it('calls API correctly and returns success message', async () => {
+      const mock = myNock()[t.verb](t.endpoint).reply(204);
       const response = await doRequest(t.intentName, {
         slots: t.slots
       });
       expect(response.speak).toBe(t.speak);
-      expect(nock.isDone()).toBe(true);
+      expect(mock.isDone()).toBe(true);
     });
   });
 }
@@ -332,7 +333,7 @@ describe('API error handling', () => {
   });
 
   it("gives an error message when Spotify returns 403 PREMIUM_REQUIRED", async () => {
-    nock('https://api.spotify.com').put('/v1/me/player/play').reply(403, {
+    const mock = myNock().put('/v1/me/player/play').reply(403, {
       error: {
         message: 'PLACEHOLDER',
         status: 'PLACEHOLDER',
@@ -341,14 +342,6 @@ describe('API error handling', () => {
     });
     const response = await doRequest('PlayIntent');
     expect(response.speak).toBe("Für diesen Befehl benötigst du leider einen Spotify Premium Account.");
-  });
-});
-
-describe("misc.", () => {
-  //TODO: just integrate myNock everywhere
-  it("sends the accessToken: PlayIntent", async () => {
-    myNock.put('/v1/me/player/play').reply(204);
-    await doRequest('PlayIntent');
-    expect(nock.isDone()).toBe(true);
+    expect(mock.isDone()).toBe(true);
   });
 });
