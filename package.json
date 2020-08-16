@@ -7,10 +7,11 @@
     "fuse.js": "^6.4.1",
     "i18next": "^19.3.2",
     "iso8601-duration": "^1.2.0",
-    "spotify-web-api-node": "^4.0.0"
+    "spotify-web-api-node": "https://github.com/nailujx86/spotify-web-api-node"
   },
   "devDependencies": {
-    "jest": "^26.2.2"
+    "jest": "^26.4.0",
+    "nock": "^13.0.4"
   },
   "scripts": {
     "test": "jest",

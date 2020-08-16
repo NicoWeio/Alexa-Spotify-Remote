@@ -14,7 +14,7 @@ const GetCurrentlyPlayingIntentHandler = {
     //TODO handle not playing
     if (state.item)
       return handlerInput.responseBuilder
-        .speak(`Es spielt gerade „${Helpers.escapeContent(state.item.name)}“ von „${Helpers.escapeContent(state.item.artists.map(a => a.name).join(','))}“ auf „${Helpers.escapeContent(state.device.name)}“.`)
+        .speak(`Es spielt gerade „${Helpers.escapeContent(state.item.name)}“ von „${Helpers.escapeContent(state.item.artists.map(a => a.name).join(', '))}“ auf „${Helpers.escapeContent(state.device.name)}“.`)
         .getResponse();
     else
       return handlerInput.responseBuilder
@@ -42,6 +42,13 @@ const PlayOnDeviceIntentHandler = {
     let deviceQuery = handlerInput.requestEnvelope.request.intent.slots.Device.value;
     let s = Spotify(handlerInput);
     const devices = (await s.getMyDevices()).body.devices;
+
+    if (devices.length === 0) {
+      return handlerInput.responseBuilder
+        .speak("Ich sehe keine aktiven Geräte in deinem Spotify-Account.")
+        .getResponse();
+    }
+
     const results = (new Fuse(devices, {
       keys: ['name'],
       threshold: 0.4, //TODO
@@ -82,7 +89,7 @@ const PauseIntentHandler = {
 const NextSongIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.NextIntent'),
   async handle(handlerInput) {
-    await Spotify(handlerInput).nextSong();
+    await Spotify(handlerInput).skipToNext();
     return handlerInput.responseBuilder
       .speak('Okay, nächster Song.')
       .getResponse();
@@ -92,7 +99,7 @@ const NextSongIntentHandler = {
 const PreviousSongIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.PreviousIntent'),
   async handle(handlerInput) {
-    await Spotify(handlerInput).previousSong();
+    await Spotify(handlerInput).skipToPrevious();
     return handlerInput.responseBuilder
       .speak('Okay, vorheriger Song.')
       .getResponse();
@@ -107,8 +114,8 @@ const SetVolumeIntentHandler = {
     let volume = handlerInput.requestEnvelope.request.intent.slots.Volume.value;
     await Spotify(handlerInput).setVolume(volume);
     return handlerInput.responseBuilder
-    .speak(`Okay, setze Lautstärke auf ${volume}%.`)
-    .getResponse();
+      .speak(`Okay, setze Lautstärke auf ${volume}%.`)
+      .getResponse();
   }
 };
 
@@ -221,17 +228,6 @@ const IntentReflectorHandler = {
 
 // --- error handlers ----
 
-const NotAuthenticatedErrorHandler = {
-  canHandle(handlerInput, error) {
-    return error && error.isAxiosError && error.response.status === 403;
-  },
-  handle(handlerInput) {
-    return handlerInput.responseBuilder
-      .speak("Leider ist bei der Kommunikation mit Spotify etwas schief gelaufen. Bitte versuche, den Skill erneut mit Spotify zu verbinden. Öffne dazu die Alexa-App und klicke auf die Karte, die ich dir dorthin gesendet habe.")
-      .withLinkAccountCard()
-      .getResponse();
-  }
-};
 
 const NoTokenErrorHandler = {
   canHandle(handlerInput, error) {
@@ -245,12 +241,27 @@ const NoTokenErrorHandler = {
   }
 };
 
+const PremiumRequiredErrorHandler = {
+  canHandle(handlerInput, error) {
+    return error && error.reason === 'PREMIUM_REQUIRED';
+  },
+  handle(handlerInput) {
+    // TODO bekomme von dem upstream-Paket gar keinen response-body zurück…
+    // Bis es dort behoben ist, auf diesen Fork gewechselt:
+    // https://github.com/nailujx86/spotify-web-api-node
+    return handlerInput.responseBuilder
+      .speak("Für diesen Befehl benötigst du leider einen Spotify Premium Account.")
+      .withLinkAccountCard()
+      .getResponse();
+  }
+};
+
 const ErrorHandler = {
   canHandle() {
     return true;
   },
   handle(handlerInput, error) {
-    console.log("~~~~ Error handled", error);
+    console.warn("~~~~ Error handled", error);
 
     return handlerInput.responseBuilder
       .speak(handlerInput.t('ERROR'))
@@ -299,8 +310,8 @@ exports.skillBuilder = Alexa.SkillBuilders.custom()
     SessionEndedRequestHandler,
     IntentReflectorHandler)
   .addErrorHandlers(
-    NotAuthenticatedErrorHandler,
     NoTokenErrorHandler,
+    PremiumRequiredErrorHandler,
     ErrorHandler)
   .addRequestInterceptors(LocalisationRequestInterceptor)
   .withApiClient(new Alexa.DefaultApiClient())
