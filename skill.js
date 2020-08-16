@@ -28,10 +28,18 @@ const GetCurrentlyPlayingIntentHandler = {
 const PlayIntentHandler = {
   canHandle: Helpers.canHandleIntent('PlayIntent'),
   async handle(handlerInput) {
-    await Spotify(handlerInput).play();
-    return handlerInput.responseBuilder
-      .speak('Okay, ich starte die Wiedergabe.')
-      .getResponse();
+    try {
+      await Spotify(handlerInput).play();
+      return handlerInput.responseBuilder
+        .speak('Okay, ich starte die Wiedergabe.')
+        .getResponse();
+    } catch (e) {
+      if (e.statusCode === 403 && ['ALREADY_PLAYING', 'UNKNOWN'].includes(e.reason))
+        return handlerInput.responseBuilder
+          .speak('Das hat leider nicht geklappt. Vielleicht läuft die Wiedergabe schon?')
+          .getResponse();
+      else throw e;
+    }
   }
 };
 
@@ -77,10 +85,18 @@ const PlayOnDeviceIntentHandler = {
 const PauseIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.PauseIntent'),
   async handle(handlerInput) {
-    await Spotify(handlerInput).pause();
-    return handlerInput.responseBuilder
-      .speak('Okay, pausiere.')
-      .getResponse();
+    try {
+      await Spotify(handlerInput).pause();
+      return handlerInput.responseBuilder
+        .speak('Okay, pausiere.')
+        .getResponse();
+    } catch (e) {
+      if (e.statusCode === 403 && ['ALREADY_PAUSED', 'UNKNOWN'].includes(e.reason))
+        return handlerInput.responseBuilder
+          .speak('Das hat leider nicht geklappt. Vielleicht ist die Wiedergabe schon pausiert?')
+          .getResponse();
+      else throw e;
+    }
   }
 };
 
@@ -162,7 +178,7 @@ const LaunchRequestHandler = {
         .reprompt(handlerInput.t('WELCOME_REPROMPT'))
         .getResponse();
     } catch (e) {
-      console.warn(e);
+      if (e.name !== 'NoTokenError') throw e;
       return handlerInput.responseBuilder
         .speak(handlerInput.t('WELCOME_NO_TOKEN'))
         .withLinkAccountCard()
@@ -241,17 +257,16 @@ const NoTokenErrorHandler = {
   }
 };
 
-const PremiumRequiredErrorHandler = {
+const ReasonedPlayerErrorHandler = {
   canHandle(handlerInput, error) {
-    return error && error.reason === 'PREMIUM_REQUIRED';
+    return error && error.reason;
   },
-  handle(handlerInput) {
+  handle(handlerInput, error) {
     // TODO bekomme von dem upstream-Paket gar keinen response-body zurück…
     // Bis es dort behoben ist, auf diesen Fork gewechselt:
     // https://github.com/nailujx86/spotify-web-api-node
     return handlerInput.responseBuilder
-      .speak("Für diesen Befehl benötigst du leider einen Spotify Premium Account.")
-      .withLinkAccountCard()
+      .speak(handlerInput.t('ERR_REASON_' + error.reason) || "Ich weiß nicht, was schief gelaufen ist.")
       .getResponse();
   }
 };
@@ -311,7 +326,7 @@ exports.skillBuilder = Alexa.SkillBuilders.custom()
     IntentReflectorHandler)
   .addErrorHandlers(
     NoTokenErrorHandler,
-    PremiumRequiredErrorHandler,
+    ReasonedPlayerErrorHandler,
     ErrorHandler)
   .addRequestInterceptors(LocalisationRequestInterceptor)
   .withApiClient(new Alexa.DefaultApiClient())
