@@ -6,10 +6,10 @@ module.exports = {
   },
   de: {
     translation: {
-      WELCOME: "Willkommen bei „Fernbedienung für Spotify“. Was möchtest du tun?",
-      WELCOME_NO_TOKEN: "Willkommen bei „Fernbedienung für Spotify“. Um den Skill zu verwenden, verknüpfe ihn zuerst mit Spotify. Gehe dazu in die Alexa-App und folge den Anweisungen.",
+      WELCOME: "Willkommen bei der Spotify-Fernbedienung. Was möchtest du tun?",
+      WELCOME_NO_TOKEN: "Willkommen bei der Spotify-Fernbedienung. Um den Skill zu verwenden, verknüpfe ihn zuerst mit Spotify. Gehe dazu in die Alexa-App und folge den Anweisungen.",
       WELCOME_REPROMPT: "Was möchtest du tun? Wenn du Hilfe brauchst, sage „Hilfe“.",
-      HELP: 'Hier ist eine kurze Einführung in den Skill „Fernbedienung für Spotify“. Dieser Skill ermöglicht es dir, die Spotify-Wiedergabe zu steuern, auch wenn sie nicht auf dem Alexa-Gerät läuft, zu dem du gerade sprichst. Folgende Funktionen stehen dir zur Verfügung: Wiedergabe auf einem bestimmten Gerät, Pause, Lautstärke ändern, Songs vor und zurück springen, zu einer Stelle im Song springen, Zufallswiedergabe an oder aus schalten. Außerdem kannst du mich fragen, was gerade spielt. Was kann ich nun für dich tun?',
+      HELP: 'Hier ist eine kurze Einführung in den Skill „Musik-Fernbedienung“. Dieser Skill ermöglicht es dir, die Spotify-Wiedergabe zu steuern, auch wenn sie nicht auf dem Alexa-Gerät läuft, zu dem du gerade sprichst. Folgende Funktionen stehen dir zur Verfügung: Wiedergabe auf einem bestimmten Gerät, Pause, Lautstärke ändern, Songs vor und zurück springen, zu einer Stelle im Song springen, Zufallswiedergabe an oder aus schalten. Außerdem kannst du mich fragen, was gerade spielt. Was kann ich nun für dich tun?',
       HELP_REPROMPT: "Falls du weitere Informationen brauchst, schau mal in die Beschreibung des Skills. Wie kann ich dir nun helfen?",
       GOODBYE: "Tschüss!",
       REFLECTOR: "Du hast gerade {{intentName}} ausgelöst",
