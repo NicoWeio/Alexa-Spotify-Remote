@@ -201,7 +201,7 @@ const CancelAndStopIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.CancelIntent', 'AMAZON.StopIntent'),
   handle(handlerInput) {
     return handlerInput.responseBuilder
-      .speak((Math.random() > 0.2) ? "Tschüss!" : "Tschüss und danke, dass du „Musik-Fernbedienung“ benutzt.")
+      .speak((Math.random() > 0.2) ? "Tschüss!" : "Tschüss und danke, dass du „Musik-Steuerung“ benutzt.")
       .getResponse();
   }
 };
