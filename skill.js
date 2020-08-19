@@ -1,7 +1,7 @@
 const Alexa = require('ask-sdk-core');
 const i18n = require('i18next');
 
-const languageStrings = require('./languageStrings');
+const languageStrings = require('./languages');
 const Spotify = require('./spotify').SpotifyClass;
 const Helpers = require('./helpers');
 
@@ -14,11 +14,15 @@ const GetCurrentlyPlayingIntentHandler = {
     //TODO handle not playing
     if (state.item)
       return handlerInput.responseBuilder
-        .speak(`Es spielt gerade „${Helpers.escapeContent(state.item.name)}“ von „${Helpers.escapeContent(state.item.artists.map(a => a.name).join(', '))}“ auf „${Helpers.escapeContent(state.device.name)}“.`)
+        .speak(handlerInput.t('GET_CURRENTLY_PLAYING', {
+          artists: Helpers.escapeContent(state.item.artists.map(a => a.name).join(', ')),
+          deviceName: Helpers.escapeContent(state.device.name),
+          itemName: Helpers.escapeContent(state.item.name),
+        }))
         .getResponse();
     else
       return handlerInput.responseBuilder
-        .speak('Gerade wird nichts wiedergegeben.')
+        .speak(handlerInput.t('NOTHING_PLAYING'))
         .getResponse();
   }
 };
@@ -31,12 +35,12 @@ const PlayIntentHandler = {
     try {
       await Spotify(handlerInput).play();
       return handlerInput.responseBuilder
-        .speak('Okay, ich starte die Wiedergabe.')
+        .speak(handlerInput.t('PLAY_SUCCESS'))
         .getResponse();
     } catch (e) {
       if (e.statusCode === 403 && ['ALREADY_PLAYING', 'UNKNOWN'].includes(e.reason))
         return handlerInput.responseBuilder
-          .speak('Das hat leider nicht geklappt. Vielleicht läuft die Wiedergabe schon?')
+          .speak(handlerInput.t('PLAY_ERROR'))
           .getResponse();
       else throw e;
     }
@@ -53,7 +57,7 @@ const PlayOnDeviceIntentHandler = {
 
     if (devices.length === 0) {
       return handlerInput.responseBuilder
-        .speak("Ich sehe keine aktiven Geräte in deinem Spotify-Account.")
+        .speak(handlerInput.t('ERR_REASON.NO_ACTIVE_DEVICE'))
         .getResponse();
     }
 
@@ -71,12 +75,14 @@ const PlayOnDeviceIntentHandler = {
       });
 
       return handlerInput.responseBuilder
-        .speak(`Okay, spiele auf ${Helpers.escapeContent(selectedDevice.name)}`)
+        .speak(handlerInput.t('PLAYONDEVICE_SUCCESS', {
+          deviceName: Helpers.escapeContent(selectedDevice.name),
+        }))
         .getResponse();
     } else {
       return handlerInput.responseBuilder
-        .speak('Ich habe kein passendes Gerät gefunden. Versuche es bitte noch einmal.')
-        .reprompt('Versuche es noch einmal. Ich benötige den Namen des Geräts, auf dem du Musik abspielen möchtest.')
+        .speak(handlerInput.t('PLAYONDEVICE_NO_MATCH'))
+        .reprompt(handlerInput.t('PLAYONDEVICE_NO_MATCH_REPROMPT'))
         .getResponse();
     }
   }
@@ -88,12 +94,12 @@ const PauseIntentHandler = {
     try {
       await Spotify(handlerInput).pause();
       return handlerInput.responseBuilder
-        .speak('Okay, pausiere.')
+        .speak(handlerInput.t('PAUSE_SUCCESS'))
         .getResponse();
     } catch (e) {
       if (e.statusCode === 403 && ['ALREADY_PAUSED', 'UNKNOWN'].includes(e.reason))
         return handlerInput.responseBuilder
-          .speak('Das hat leider nicht geklappt. Vielleicht ist die Wiedergabe schon pausiert?')
+          .speak(handlerInput.t('PAUSE_ERROR'))
           .getResponse();
       else throw e;
     }
@@ -107,7 +113,7 @@ const NextSongIntentHandler = {
   async handle(handlerInput) {
     await Spotify(handlerInput).skipToNext();
     return handlerInput.responseBuilder
-      .speak('Okay, nächster Song.')
+      .speak(handlerInput.t('NEXTSONG_SUCCESS'))
       .getResponse();
   }
 };
@@ -117,7 +123,7 @@ const PreviousSongIntentHandler = {
   async handle(handlerInput) {
     await Spotify(handlerInput).skipToPrevious();
     return handlerInput.responseBuilder
-      .speak('Okay, vorheriger Song.')
+      .speak(handlerInput.t('PREVIOUSSONG_SUCCESS'))
       .getResponse();
   }
 };
@@ -130,7 +136,9 @@ const SetVolumeIntentHandler = {
     let volume = handlerInput.requestEnvelope.request.intent.slots.Volume.value;
     await Spotify(handlerInput).setVolume(volume);
     return handlerInput.responseBuilder
-      .speak(`Okay, setze Lautstärke auf ${volume}%.`)
+      .speak(handlerInput.t('SETVOLUME_SUCCESS', {
+        volume,
+      }))
       .getResponse();
   }
 };
@@ -143,7 +151,7 @@ const ToggleShuffleIntentHandler = {
       state
     });
     return handlerInput.responseBuilder
-      .speak(`Okay, Zufallswiedergabe ist jetzt ${state ? 'an' : 'aus'}.`)
+      .speak(handlerInput.t(state ? 'TOGGLESHUFFLE_ON' : 'TOGGLESHUFFLE_OFF'))
       .getResponse();
   }
 };
@@ -158,7 +166,7 @@ const SeekIntentHandler = {
     let millis = IsoDuration.toSeconds(IsoDuration.parse(newIndex)) * 1000;
     await Spotify(handlerInput).seek(millis);
     return handlerInput.responseBuilder
-      .speak('Okay.')
+      .speak(handlerInput.t('SEEK_SUCCESS'))
       .getResponse();
   }
 };
@@ -170,7 +178,7 @@ const LaunchRequestHandler = {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
   },
   handle(handlerInput) {
-    console.log("LaunchRequest");
+    console.log('LaunchRequest');
     try {
       Spotify(handlerInput); //throws NoTokenError
       return handlerInput.responseBuilder
@@ -201,7 +209,7 @@ const CancelAndStopIntentHandler = {
   canHandle: Helpers.canHandleIntent('AMAZON.CancelIntent', 'AMAZON.StopIntent'),
   handle(handlerInput) {
     return handlerInput.responseBuilder
-      .speak((Math.random() > 0.2) ? "Tschüss!" : "Tschüss und danke, dass du „Musik-Steuerung“ benutzt.")
+      .speak(handlerInput.t((Math.random() > 0.2) ? 'GOODBYE' : 'GOODBYE_THANKS'))
       .getResponse();
   }
 };
@@ -221,7 +229,7 @@ const SessionEndedRequestHandler = {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
   },
   handle(handlerInput) {
-    console.log("~~~~ Session ended: ", handlerInput.requestEnvelope);
+    console.log('~~~~ Session ended: ', handlerInput.requestEnvelope);
     // Any cleanup logic goes here.
     return handlerInput.responseBuilder.getResponse(); // notice we send an empty response
   }
@@ -251,7 +259,7 @@ const NoTokenErrorHandler = {
   },
   handle(handlerInput) {
     return handlerInput.responseBuilder
-      .speak("Du hast den Skill noch nicht mit Spotify verknüpft. Öffne einfach die Alexa-App und führe die Kontoverknüpfung durch.")
+      .speak(handlerInput.t('ERR_NO_TOKEN'))
       .withLinkAccountCard()
       .getResponse();
   }
@@ -266,7 +274,7 @@ const ReasonedPlayerErrorHandler = {
     // Bis es dort behoben ist, auf diesen Fork gewechselt:
     // https://github.com/nailujx86/spotify-web-api-node
     return handlerInput.responseBuilder
-      .speak(handlerInput.t('ERR_REASON_' + error.reason) || "Ich weiß nicht, was schief gelaufen ist.")
+      .speak(handlerInput.t('ERR_REASON.' + error.reason) || handlerInput.t('ERR_UNKNOWN'))
       .getResponse();
   }
 };
@@ -276,7 +284,7 @@ const ErrorHandler = {
     return true;
   },
   handle(handlerInput, error) {
-    console.warn("~~~~ Error handled", error);
+    console.warn('~~~~ Error handled', error);
 
     return handlerInput.responseBuilder
       .speak(handlerInput.t('ERROR'))

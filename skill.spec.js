@@ -198,7 +198,7 @@ describe('PlayOnDeviceIntent', () => {
           Device: "Device"
         }
       });
-      expect(response.speak).toBe("Ich sehe keine aktiven Geräte in deinem Spotify-Account.");
+      expect(response.speak).toBe("Dazu wird ein Gerät benötigt, auf dem Spotify aktiv ist.");
       expect(mock.isDone()).toBe(true);
     });
 
