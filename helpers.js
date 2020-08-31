@@ -12,3 +12,21 @@ exports.canHandleIntent = function(...handleableIntentNames) {
     return handleableIntentNames.some(h => h === receivedIntentName);
   }
 }
+
+exports.progressiveResponse = function(handlerInput, speech) {
+  const {
+    requestEnvelope
+  } = handlerInput
+  const directiveServiceClient = handlerInput.serviceClientFactory.getDirectiveServiceClient();
+
+  const directive = {
+    header: {
+      requestId: requestEnvelope.request.requestId,
+    },
+    directive: {
+      type: 'VoicePlayer.Speak',
+      speech,
+    }
+  };
+  return directiveServiceClient.enqueue(directive, requestEnvelope.context.System.apiEndpoint, requestEnvelope.context.System.apiAccessToken);
+}
