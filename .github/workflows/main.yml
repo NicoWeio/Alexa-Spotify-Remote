@@ -1,0 +1,31 @@
+name: Deploy to Lambda
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1.4.3
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Create ZIP archive
+        run: zip -r deployment.zip *
+
+      - name: Deploy to AWS Lambda
+        uses: appleboy/lambda-action@v0.0.4
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          function_name: ${{ secrets.AWS_FUNCTION_NAME }}
+          zip_file: deployment.zip
