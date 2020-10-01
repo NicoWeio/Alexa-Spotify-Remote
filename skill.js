@@ -292,6 +292,50 @@ const PreviousSongIntentHandler = {
   }
 };
 
+const JumpToContextStartEndIntentHandlerFactory = (toStart) => ({
+  canHandle: Helpers.canHandleIntent(toStart ? 'JumpToContextStartIntent' : 'JumpToContextEndIntent'),
+  async handle(handlerInput) {
+    let state = (await Spotify(handlerInput).getMyCurrentPlaybackState()).body;
+    // don't crash on private sessions / radio / …
+    if (!state.context) state.context = {
+      type: state.context,
+    };
+    switch (state.context.type) {
+      case 'album':
+      case 'playlist':
+        {
+          let id = state.context.uri.split(':').pop();
+          let position = toStart ? 0 : ((await Spotify(handlerInput)[state.context.type === 'album' ? 'getAlbumTracks' : 'getPlaylistTracks'](id, {
+            limit: 1 // we only care about the number of tracks
+          })).body.total - 1);
+          await Spotify(handlerInput).play({
+            context_uri: state.context.uri,
+            offset: {
+              position,
+            },
+          });
+          return handlerInput.responseBuilder
+            .speak(handlerInput.t(toStart ?
+              (state.context.type === 'playlist' ?
+                "Okay, springe zum Anfang der Playlist." :
+                "Okay, springe zum Anfang des Albums.") :
+              (state.context.type === 'playlist' ?
+                "Okay, springe zum Ende der Playlist." :
+                "Okay, springe zum Ende des Albums.")
+            ))
+            .getResponse();
+        }
+      default:
+        {
+          console.log("Unsupported context type:", state.context.type);
+          return handlerInput.responseBuilder
+            .speak(handlerInput.t("Das funktioniert mit deiner aktuellen Wiedergabe nicht."))
+            .getResponse();
+        }
+    }
+  }
+});
+
 // --- setters/toggles ---
 
 const SetVolumeIntentHandler = {
@@ -484,6 +528,8 @@ exports.skillBuilder = Alexa.SkillBuilders.custom()
     // --- skip ---
     NextSongIntentHandler,
     PreviousSongIntentHandler,
+    JumpToContextStartEndIntentHandlerFactory(true), // JumpToContextStartIntent
+    JumpToContextStartEndIntentHandlerFactory(false), // JumpToContextEndIntent
     // --- setters/toggles ---
     SetVolumeIntentHandler,
     ToggleShuffleIntentHandler,
