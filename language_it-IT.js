@@ -57,7 +57,7 @@ module.exports = {
       DEVICE_NOT_CONTROLLABLE: "Non è possibile controllare questo dispositivo da remoto.",
       VOLUME_CONTROL_DISALLOW: "Non è possibile controllare il volume di questo dispositivo.",
       NO_ACTIVE_DEVICE: "Non c'è nessun dispositivo disponibile su cui eseguire questo comando.",
-      PREMIUM_REQUIRED: "Sfortunatamente questa richiesta è disponibile solo per gli utenti premium.",
+      PREMIUM_REQUIRED: "Sfortunatamente questa richiesta è disponibile solo per gli utenti Spotify premium.",
       UNKNOWN: "Hm, qualcosa è andato storto. Forse hai provato a iniziare la riproduzione quando stavo già riproducendo della musica.",
     }
   },
