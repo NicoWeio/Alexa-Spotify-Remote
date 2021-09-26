@@ -42,7 +42,7 @@ module.exports = {
     // https://developer.spotify.com/documentation/web-api/reference/object-model/#player-error-object
     ERR_REASON: {
       NO_PREV_TRACK: "Questo comando richiede una traccia precendente, ma non ce n'è nessuna nella playlist.",
-      NO_NEXT_TRACK: "uesto comando richiede una traccia successiva, ma non ce n'è nessuna disponibile nella playlist.",
+      NO_NEXT_TRACK: "Questo comando richiede una traccia successiva, ma non ce n'è nessuna disponibile nella playlist.",
       // NO_SPECIFIC_TRACK: "La traccia richiesta non esiste.",
       ALREADY_PAUSED: "Questo comando richiede che la musica non sia già in pausa.",
       NOT_PAUSED: "Questo comando richiede che la musica sia in pausa.",
