@@ -3,7 +3,7 @@ module.exports = {
     WELCOME: "Welcome to “Playback control”, the unofficial remote for Spotify. What would you like to do?",
     WELCOME_NO_TOKEN: "Welcome to “Playback control”, the unofficial remote for Spotify. In order to use this skill, you need to link your Spotify account. To do this just open the Alexa app and follow the instructions.",
     WELCOME_REPROMPT: "What would you like to do? If you need help, just say “help”.",
-    HELP: "Here is a short introduction of “Playback control”. It enables you to control playback on Spotify, even if it's not currently playing on an Alexa device. The following features are available: Playback on a certain device, pause, changing volume, skipping to the next or previous song, seeking in the currently playing track, and toggling shuffle. You can also ask me what song is currently playing. How can I help you now?",
+    HELP: "Here is a short introduction of “Playback control”. It enables you to control playback on Spotify, even if it's not currently playing on an Alexa device. The following features are available: Playback on a specific device, pause, changing volume, skipping to the next or previous song, seeking in the currently playing track, and toggling shuffle. You can also ask me what song is currently playing. How can I help you now?",
     HELP_REPROMPT: "If you need further assistance, take a look at the skill's description in the Alexa app. How can I help you now?",
     GOODBYE: "Goodbye!",
     GOODBYE_THANKS: "Goodbye and thanks for using “Playback control”.",
