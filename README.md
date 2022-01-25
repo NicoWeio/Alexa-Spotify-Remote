@@ -22,7 +22,6 @@ You can either
 
 
 ## Player Controls
-
 You can use Alexa’s standard voice commands to control the player during playback. Just say `Alexa, tell Playback control to Pause`. You will need to say `Tell Playback control` or `Ask Playback control` when using these commands.
 * `Play`
 * `Pause`
