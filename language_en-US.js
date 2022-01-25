@@ -57,7 +57,7 @@ module.exports = {
       DEVICE_NOT_CONTROLLABLE: "It is not possible to remote control the device.",
       VOLUME_CONTROL_DISALLOW: "It is not possible to remote control the device’s volume.",
       NO_ACTIVE_DEVICE: "I don't see an active device to perform this action on.",
-      PREMIUM_REQUIRED: "Unfortunately, this request is prohibited for non-premium users.",
+      PREMIUM_REQUIRED: "Unfortunately, this request is prohibited for non-Premium users.",
       UNKNOWN: "Hm, that didn't work out. Maybe you've tried something like starting playback while it's already playing.",
     }
   },
